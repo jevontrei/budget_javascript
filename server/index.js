@@ -2,11 +2,22 @@ require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const socketIO = require("socket.io");
+const http = require("http");
 
 const port = process.env.PORT || 5000;
 const app = express();
+const server = http.createServer(app);
 
-app.use(cors());
+// for socket.io connections
+const io = socketIO(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+app.use(cors()); // for http connections
+app.use(express.json());
 
 const options = {
   headers: {
@@ -38,4 +49,10 @@ app.get("/transactions", async (req, res) => {
   res.send(relativeData);
 });
 
-app.listen(port, () => console.log(`listening on port ${port}`));
+app.post("/webhooks", (req, res) => {
+  console.log(req.body);
+  io.emit('webhook', req.body)
+  res.send("thanks webhook");
+});
+
+server.listen(port, () => console.log(`listening on port ${port}`));
